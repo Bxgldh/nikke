@@ -4,4 +4,4 @@
 # But DON'T ignore these:
 !.gitignore
 !main.py
-!.github/
+!.github/workflows/build-windows.yml
