@@ -24,14 +24,30 @@ jobs:
         shell: powershell
         run: |
           choco install -y tesseract
+          refreshenv || Write-Host "refreshenv not available; PATH may not be updated in this shell"
 
-      - name: Show tesseract install info (for debugging)
+      - name: Show tesseract install info (for debugging; non-fatal)
         shell: powershell
         run: |
-          Write-Host "Where tesseract:"
-          Get-Command tesseract | Select-Object Source
-          Write-Host "List tessdata dir:"
-          Get-ChildItem "C:\Program Files\Tesseract-OCR\tessdata" -ErrorAction SilentlyContinue
+          Write-Host "Trying to locate tesseract..."
+          $t = Get-Command tesseract -ErrorAction SilentlyContinue
+          if ($null -eq $t) {
+            Write-Warning "tesseract not found in PATH. Build will continue but PyInstaller embedding expects tesseract installed on runner. If you plan to --add-binary tesseract.exe, ensure the path used in --add-binary exists."
+            if (Test-Path "C:\Program Files\Tesseract-OCR") {
+              Write-Host "Tesseract common folder exists: C:\Program Files\Tesseract-OCR"
+              Get-ChildItem "C:\Program Files\Tesseract-OCR" -Force | Write-Host
+            } else {
+              Write-Host "C:\\Program Files\\Tesseract-OCR not found."
+            }
+          } else {
+            Write-Host "tesseract found at: $($t.Source)"
+            try {
+              Write-Host "tesseract version:"
+              tesseract --version
+            } catch {
+              Write-Warning "Cannot run tesseract --version in this shell."
+            }
+          }
 
       - name: Install Python deps
         shell: powershell
@@ -39,7 +55,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyinstaller mss opencv-python numpy pytesseract pillow pywin32
 
-      - name: Prepare build (optional:clean previous builds)
+      - name: Prepare build (optional: clean previous builds)
         shell: powershell
         run: |
           if (Test-Path dist) { Remove-Item -Recurse -Force dist }
