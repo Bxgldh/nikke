@@ -18,54 +18,48 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'  # 可改为你要的版本
+          python-version: '3.10'
 
       - name: Install system packages (Chocolatey -> tesseract)
+        shell: powershell
         run: |
           choco install -y tesseract
-        shell: powershell
 
       - name: Show tesseract install info (for debugging)
+        shell: powershell
         run: |
           Write-Host "Where tesseract:"
           Get-Command tesseract | Select-Object Source
           Write-Host "List tessdata dir:"
           Get-ChildItem "C:\Program Files\Tesseract-OCR\tessdata" -ErrorAction SilentlyContinue
-        shell: powershell
 
       - name: Install Python deps
+        shell: powershell
         run: |
           python -m pip install --upgrade pip
           pip install pyinstaller mss opencv-python numpy pytesseract pillow pywin32
-        shell: bash
 
       - name: Prepare build (optional: clean previous builds)
+        shell: powershell
         run: |
           if (Test-Path dist) { Remove-Item -Recurse -Force dist }
           if (Test-Path build) { Remove-Item -Recurse -Force build }
           if (Test-Path main.spec) { Remove-Item -Force main.spec }
-        shell: powershell
 
       - name: Build exe with PyInstaller (onefile)
+        shell: powershell
         run: |
-          # adjust paths if tesseract installed elsewhere; typical path:
           $tessRoot = "C:\Program Files\Tesseract-OCR"
           if (-not (Test-Path $tessRoot)) {
             Write-Host "Warning: expected tesseract at $tessRoot not found; adjust workflow if necessary."
           }
-          # Build single-file exe and embed tesseract + tessdata
-          pyinstaller --onefile --windowed `
-            --add-binary "$tessRoot\tesseract.exe;." `
-            --add-data "$tessRoot\tessdata;tessdata" `
-            --hidden-import "win32timezone" `
-            main.py
-        shell: powershell
+          pyinstaller --onefile --windowed --add-binary "$tessRoot\tesseract.exe;." --add-data "$tessRoot\tessdata;tessdata" --hidden-import "win32timezone" main.py
 
       - name: List build output
+        shell: powershell
         run: |
           Write-Host "Files in dist:"
           Get-ChildItem -Path dist -Recurse
-        shell: powershell
 
       - name: Upload exe artifact
         uses: actions/upload-artifact@v4
