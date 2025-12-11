@@ -39,7 +39,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyinstaller mss opencv-python numpy pytesseract pillow pywin32
 
-      - name: Prepare build (optional: clean previous builds)
+      - name: Prepare build (optional:clean previous builds)
         shell: powershell
         run: |
           if (Test-Path dist) { Remove-Item -Recurse -Force dist }
