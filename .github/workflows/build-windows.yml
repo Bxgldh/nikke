@@ -24,11 +24,22 @@ jobs:
         shell: powershell
         run: |
           choco install -y tesseract
-          refreshenv || Write-Host "refreshenv not available; PATH may not be updated in this shell"
 
-      - name: Show tesseract install info (for debugging; non-fatal)
+      - name: Refresh PATH / Show tesseract install info (non-fatal)
         shell: powershell
         run: |
+          Write-Host "Attempting to refresh environment (refreshenv) if available..."
+          if (Get-Command refreshenv -ErrorAction SilentlyContinue) {
+            try {
+              refreshenv
+              Write-Host "refreshenv executed."
+            } catch {
+              Write-Warning "refreshenv failed to execute."
+            }
+          } else {
+            Write-Host "refreshenv not available in this shell; PATH may not be updated in this step."
+          }
+
           Write-Host "Trying to locate tesseract..."
           $t = Get-Command tesseract -ErrorAction SilentlyContinue
           if ($null -eq $t) {
@@ -55,7 +66,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyinstaller mss opencv-python numpy pytesseract pillow pywin32
 
-      - name: Prepare build (optional:clean previous builds)
+      - name: Prepare build (optional: clean previous builds)
         shell: powershell
         run: |
           if (Test-Path dist) { Remove-Item -Recurse -Force dist }
